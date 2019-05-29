@@ -1,100 +1,92 @@
-# Importa as bibliotecas necessárias
 import matlab.engine
 import os
 from random import randint
 
+print("Initializing Matlab and preparing files. Please wait...")
 
-# Avisa usuário que programa começou e está aguardando o Matlab
-print("Inicializando Matlab. Por favor aguarde... ")
+# Creates directory to save bode diagrams and .txt file
+if not os.path.exists('.\\Bode_diagrams'):
+    os.makedirs('.\\Bode_diagrams')
+os.chdir('.\\Bode_diagrams')
 
-
-# Cria o diretório que vai salvar os bodes e o txt
-# os.chdir(os.path.join(os.path.expanduser('~'), 'Desktop'))
-if not os.path.exists('.\\Diagramas de Bode'):
-    os.makedirs('.\\Diagramas de Bode')
-os.chdir('.\\Diagramas de Bode')
-
-
-# Abre o txt e o engine do Matlab e inicializa 's'
-arquivoTexto = open('Funções de transferência.txt', 'a')
+# Opens .txt file, the Matlab engine
+txtFile = open('Transfer_Functions.txt', 'a')
 eng = matlab.engine.start_matlab()
 eng.eval("s = tf('s');", nargout=0)
 
 
-# "Interface" com o usuário
-print("Matlab inicializado com sucesso!")
-print("\n--------Gerador de diagramas de Bode v1.0--------")
-print("Digite a quantidade de funções de transferência desejada:")
-numeroDeFTs = int(input())
-print("Digite a ordem máxima das funções de transferência:")
-ordemDaFT = int(input())
-limitePoloZero = 20
-limiteKp = 20
-print("Gerando as funções de transferência e seus respectivos diagramas. Por favor aguarde...")
+print("Matlab initialized successfully!")
+print("\n--------Bode diagrams generator v1.1--------")
+TFCount = int(input("Enter the desired number of transfer functions: "))
+TFOrder = int(input("Enter maximum order for the transfer function: "))
+PoleZeroLimit = 20
+KpLimit = 20
+print("Generating the transfer functions and their diagrams. Please wait...")
 
-# Função para gerar polo ou zero em (s + p) onde p máximo é definido por 'limite'
-def criaPoloZeroZPK(separador,limite):
-    localizacao = randint(0,limite)
-    poloZero = ""
-    if localizacao == 0:
-        poloZero = separador + "s"
+# Function that a pole or zero in (s + p) where maximum p is defined by variable 'limit'
+def createPoleZeroZPK(separator,limit):
+    location = randint(0,limit)
+    poleZero = ""
+    if location == 0:
+        poleZero = separator + "s"
     else:
-        poloZero =  separador + "(s + " + str(localizacao) + ")"
-    return poloZero
+        poleZero =  separator + "(s + " + str(location) + ")"
+    return poleZero
 
 
-# Função para gerar função de transferência na forma Kp*(s + z1)*...*(s + zi)/(s + p1)*...*(s + pi)
-# Ordem é a ordem máxima de ambos o numerador e denominador
-# LimiteKp é o Kp máximo da funçao de transferência
-def criaFuncao(ordem):
-    Kp = randint(1,limiteKp)
-    numerador = str(Kp)
-    denominador = str(1)
-    ordemNumerador = randint(0,ordem)
-    ordemDenominador = randint(0,ordem)
-    
-    if ordemNumerador != 0:
-        parentesis = ordemNumerador != 1
+# Function that generates transfer function in the format Kp*(s + z1)*...*(s + zi)/(s + p1)*...*(s + pi)
+# Order is the maximum order of both numerator and denominator
+# KpLimit is the maximum Kp of the transfer function
+
+def generateTF(order):
+    Kp = randint(1,KpLimit)
+    numerator = str(Kp)
+    denominator = str(1)
+    numeratorOrder = randint(0,order)
+    denominatorOrder = randint(0,order)
+
+    if numeratorOrder != 0:
+        parentheses = numeratorOrder != 1
         if Kp == 1:
-            numerador = criaPoloZeroZPK("",limitePoloZero)
-            ordemNumerador -= 1
-        for n in range(ordemNumerador):
-            numerador = numerador + criaPoloZeroZPK("*",limitePoloZero)
-        if parentesis:
-            numerador = "(" + numerador + ")"
-    if numerador == "(s)":
-        numerador = "s"
-        
-    if ordemDenominador != 0:
-        denominador = criaPoloZeroZPK("",limitePoloZero)
-        for d in range(ordemDenominador-1):
-            denominador = denominador + criaPoloZeroZPK("*",limitePoloZero)
-    if ordemDenominador > 1:
-        denominador = "(" + denominador + ")"
-    if denominador == "(s)":
-        denominador = "s"
+            numerator = createPoleZeroZPK("",PoleZeroLimit)
+            numeratorOrder -= 1
+        for n in range(numeratorOrder):
+            numerator = numerator + createPoleZeroZPK("*",PoleZeroLimit)
+        if parentheses:
+            numerator = "(" + numerator + ")"
+    if numerator == "(s)":
+        numerator = "s"
 
-    if denominador == "1":
-        ft = numerador
+    if denominatorOrder != 0:
+        denominator = createPoleZeroZPK("",PoleZeroLimit)
+        for d in range(denominatorOrder-1):
+            denominator = denominator + createPoleZeroZPK("*",PoleZeroLimit)
+    if denominatorOrder > 1:
+        denominator = "(" + denominator + ")"
+    if denominator == "(s)":
+        denominator = "s"
+
+    if denominator == "1":
+        transferFunction = numerator
     else:
-        ft = numerador + "/" + denominador
-    return ft
+        transferFunction = numerator + "/" + denominator
+    return transferFunction
 
 
-# Gera a função de transferência aleatória, registra ela no documento txt e gera o bode no Matlab
-# Depois de gerar o Bode, salva a figura como bode_X.png (onde X é o numero da FT)
-for i in range(numeroDeFTs):
-    funcaoDeTransferencia = criaFuncao(ordemDaFT)
-    arquivoTexto.write(str(i+1) + " - " + funcaoDeTransferencia + "\n")
-    print("G = " + funcaoDeTransferencia + ";")
-    eng.eval("G = tf(" + funcaoDeTransferencia + ");", nargout=0)
+# Generates random transfer function, registers it in the .txt file and generate bode diagram with Matlab engine
+# After generating the Bode diagram, saves it as bode_X.png (where X is the transfer function number)
+for i in range(TFCount):
+    transferFunction = generateTF(TFOrder)
+    txtFile.write(str(i+1) + " - " + transferFunction + "\n")
+    print("G = " + transferFunction + ";")
+    eng.eval("G = tf(" + transferFunction + ");", nargout=0)
     eng.eval("bode(G);", nargout=0)
     eng.eval("saveas(gcf,'bode_" + str(i+1) + ".png');", nargout=0)
 
-
-# Finalização do programa, fechamento do Matlab e do documento de texto
-print("\nDiagramas de Bode gerados com sucesso!! (Estão na pasta 'Diagramas de Bode')")
+# End of program, closes Matlab and .txt file
+print("\nBode diagrams generated with success! (They are in directory 'Bode_diagrams')")
 eng.quit()
 eng = None
-arquivoTexto.close()
-print("<fim>")
+txtFile.close()
+print("<End of program. Press any keyboard to exit.>")
+input()
