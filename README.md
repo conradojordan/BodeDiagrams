@@ -1,4 +1,4 @@
-# BodeDiagrams
+# Bode diagram generator
 
 Python program that generates x random transfer functions (x being input by user) with y maximum order (y also being input by user).
 
