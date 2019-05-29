@@ -10,4 +10,4 @@ For the program to function, user must have installed Matlab engine API for Pyth
 
 ## License
 
-This program has no oficial license. Feel free to modify it and/or use it anyway you want to (including commercial uses).
+This program has no official license. Feel free to modify it and/or use it anyway you want to (including commercial use).
